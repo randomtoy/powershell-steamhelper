@@ -1,0 +1,1 @@
+this is small powershell module to use Steam API
