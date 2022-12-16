@@ -2,33 +2,43 @@
 
 
 #>
-Function Get-CachedGamesList {
-    [cmdletbinding()]
-    Param(
-        [Parameter(Mandatory= $true)]
-        $Key,
-        [Parameter(Mandatory = $true)]
-        [scriptblock]
-        $ScriptBlock
-    )
 
-    $CACHE_VARIABLE_NAME = "GamesList"
+class GamesList {
+    # TimeStamp
+    [datetime] $TimeStamp;
 
-    if (-not (Get-Variable -Name $CACHE_VARIABLE_NAME -Scope Global -ErrorAction SilentlyContinue)) {
-        Set-Variable -Name $CACHE_VARIABLE_NAME -Scope Global -Value @{}
-    }
-    $cache = Get-Variable -Name $CACHE_VARIABLE_NAME -Scope Global
-    if (-not $cache.Value.ContainsKey($Key)) {
-        $cachedValue = &$ScriptBlock
-        $cache.Value[$Key] = $cachedValue
-    }
-    else {
-        $cachedValue = $cache.Value[$Key]
-    }
+    # Command Name
+    [string] $Name;
 
-    $cachedValue
+    # Command 
+    [scriptblock] $Command;
+
+    #output
+    [PSCustomObject] $Value;
+
+    GamesList ([string] $name, [ScriptBlock] $scriptblock){
+        $this.TimeStamp = [datetime]::UtcNow;
+        $this.Name = $name;
+        $this.Command = $scriptblock;
+        $this.Value = $scriptblock.Invoke()
+    }
 }
 
+function Get-CachedGamesList([string]$Name, [scriptblock]$command) {
+    $CommandName = "cached_$($name)"
+    $cachedResults = Get-Variable -Scope Global -Name $CommandName -ErrorAction SilentlyContinue | Select -ExpandProperty Value
+    
+    if($null -eq $cachedResults -or ($cachedResults.TimeStamp -le [DateTime]::UtcNow.AddMinutes(-2))){
+        Write-Verbose "caching..."
+        $GamesList = [GamesList]::new($name,$command)
+        New-Variable -Scope Global -Name $CommandName -value $GamesList -Force
+        $cachedResults = $GamesList
+    } else {
+        Write-Verbose "found cache"
+    }
+    return $cachedResults.Value
+}
+    
 Function Invoke-GamesList {
 
     $appInfo = Invoke-WebRequest -URI "http://api.steampowered.com/ISteamApps/GetAppList/v0002/" -UseBasicParsing
@@ -53,14 +63,15 @@ Function Get-GamesByName {
         [Parameter(Mandatory=$true)]
         [string] $gamePattern
     )
-    $gamesResult = Get-CachedGamesList -Key "ALL_GAMES" -ScriptBlock {
-        Invoke-GamesList
-    }  | Where-Object -Property 'name' -Like "*$gamePattern*"
+    $gamesResult = Get-CachedGamesList -Name "ALL_GAMES" -command(
+        [scriptblock]::Create({
+            Invoke-GamesList
+        })
+    ) | Where-Object -Property 'name' -Like "*$gamePattern*"
 
     return $gamesResult
 
 }
-
 
 Export-ModuleMember -Function Get-GameInfo
 Export-ModuleMember -Function Get-GamesByName
