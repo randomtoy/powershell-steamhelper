@@ -26,7 +26,7 @@ class GamesList {
 
 function Get-CachedGamesList([string]$Name, [scriptblock]$command) {
     $CommandName = "cached_$($name)"
-    $cachedResults = Get-Variable -Scope Global -Name $CommandName -ErrorAction SilentlyContinue | Select -ExpandProperty Value
+    $cachedResults = Get-Variable -Scope Global -Name $CommandName -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Value
     
     if($null -eq $cachedResults -or ($cachedResults.TimeStamp -le [DateTime]::UtcNow.AddMinutes(-2))){
         Write-Verbose "caching..."
