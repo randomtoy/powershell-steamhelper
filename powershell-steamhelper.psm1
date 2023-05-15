@@ -73,5 +73,8 @@ Function Get-GamesByName {
 
 }
 
-Export-ModuleMember -Function Get-GameInfo
-Export-ModuleMember -Function Get-GamesByName
+New-Alias -Name ggi -Value Get-GameInfo
+New-Alias -Name ggbn -Value Get-GamesByName
+
+Export-ModuleMember -Function Get-GameInfo,Get-GamesByName -Alias ggi,ggbn
+
