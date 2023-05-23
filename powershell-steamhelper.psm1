@@ -48,7 +48,7 @@ Function Invoke-GamesList {
     return $appSort
 }
 
-Function Get-GameInfo{
+Function Get-SteamGameInfo{
     Param(
        [Parameter(Mandatory=$true)]
        [string] $appId
@@ -58,7 +58,7 @@ Function Get-GameInfo{
     return $appDesc.$appId
 }
 
-Function Get-GamesByName {
+Function Get-SteamGamesByName {
     Param(
         [Parameter(Mandatory=$true)]
         [string] $gamePattern
@@ -73,19 +73,92 @@ Function Get-GamesByName {
 
 }
 
-Function Get-GlobalAchievementForApp {
+Function Get-SteamSDRConfigForApp {
     Param(
         # Application ID
         [Parameter(Mandatory=$true)]
         [string]
         $AppId
     )
-    $appInfo = Invoke-WebRequest -Uri "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=1245620&key=172A0F85C7E41F0535949A92798BD399" -UseBasicParsing
-    return ($appInfo.Content | ConvertFrom-Json).game.availableGameStats.achievements
+    $appInfo = Invoke-WebRequest -Uri "https://api.steampowered.com/ISteamApps/GetSDRConfig/v0001/?appid=$AppId" -UseBasicParsing
+    return ($appInfo.Content | ConvertFrom-Json)
 }
 
-New-Alias -Name ggi -Value Get-GameInfo
-New-Alias -Name ggbn -Value Get-GamesByName
+Function Get-SteamNewsForApp {
+    param (
+        # Application ID
+        [Parameter(Mandatory=$true)]
+        [string]
+        $AppID,
+        # Max length for content
+        [parameter(Mandatory=$false)]
+        [uint32]
+        $MaxLength,
+        # Retrive posts earlier than this date (unix epoch timestamp)
+        [Parameter(Mandatory=$false)]
+        [uint32]
+        $EndDate,
+        # Number of posts to retrieve (default 20)
+        [Parameter(Mandatory=$false)]
+        [uint32]
+        $Count,
+        # Comma-separated list of feed names to return news for
+        [Parameter(Mandatory=$false)]
+        [string]
+        $Feeds,
+        # Comma-separated list of tags to filter by (e.g. 'patchnodes')
+        [Parameter(Mandatory=$false)]
+        [string]
+        $Tags
+    )
+    $queryString = "?appid=$AppId"
+    if ($MaxLength){
+        $queryString = -join($queryString,"&maxlength=$MaxLength")
+    }
+    if ($EndDate){
+        $queryString = -join($queryString,"&enddate=$EndDate")
+    }
+    if ($Count){
+        $queryString = -join($queryString,"&count=$Count")
+    }
+    if ($Feeds){
+        $queryString = -join($queryString,"&feeds=$Feeds")
+    }
+    if ($Tags){
+        $queryString = -join($queryString,"&tags=$Tags")
+    }
+    $appInfo = Invoke-WebRequest -Uri "https://api.steampowered.com/ISteamNews/GetNewsForApp/v0002/$queryString" -UseBasicParsing
+    return ($appInfo.Content | ConvertFrom-Json).appnews
+  }
 
-Export-ModuleMember -Function Get-GameInfo,Get-GamesByName,Get-GlobalAchievementForApp -Alias ggi,ggbn
+
+Function Get-GlobalAchievementPercentagesForApp {
+    Param(
+        # Application ID
+        [Parameter(Mandatory=$true)]
+        [string]
+        $AppId
+    )
+$appInfo = Invoke-WebRequest -Uri "https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/?gameid=$appId" -UseBasicParsing
+return ($appInfo.Content | ConvertFrom-Json).achievementpercentages.achievements
+}
+
+Function Get-NumberOfCurrentPlayersForApp {
+    Param(
+        # Application ID
+        [Parameter(Mandatory=$true)]
+        [string]
+        $AppId
+    )
+    $appInfo = Invoke-WebRequest -Uri "https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=$appId" -UseBasicParsing
+    return ($appInfo.Content | ConvertFrom-Json).response
+}
+
+
+
+# New-Alias -Name ggi -Value Get-GameInfo
+# New-Alias -Name ggbn -Value Get-GamesByName
+
+Export-ModuleMember -Function Get-GameInfo,Get-GamesByName,Get-SDRConfigForApp,Get-SteamNewsForApp,Get-GlobalAchievementPercentagesForApp,Get-NumberOfCurrentPlayersForApp
+#  -Alias ggi,ggbn
 
