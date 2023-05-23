@@ -132,7 +132,7 @@ Function Get-SteamNewsForApp {
   }
 
 
-Function Get-GlobalAchievementPercentagesForApp {
+Function Get-SteamGlobalAchievementPercentagesForApp {
     Param(
         # Application ID
         [Parameter(Mandatory=$true)]
@@ -143,7 +143,7 @@ $appInfo = Invoke-WebRequest -Uri "https://api.steampowered.com/ISteamUserStats/
 return ($appInfo.Content | ConvertFrom-Json).achievementpercentages.achievements
 }
 
-Function Get-NumberOfCurrentPlayersForApp {
+Function Get-SteamNumberOfCurrentPlayersForApp {
     Param(
         # Application ID
         [Parameter(Mandatory=$true)]
@@ -159,6 +159,6 @@ Function Get-NumberOfCurrentPlayersForApp {
 # New-Alias -Name ggi -Value Get-GameInfo
 # New-Alias -Name ggbn -Value Get-GamesByName
 
-Export-ModuleMember -Function Get-GameInfo,Get-GamesByName,Get-SDRConfigForApp,Get-SteamNewsForApp,Get-GlobalAchievementPercentagesForApp,Get-NumberOfCurrentPlayersForApp
+Export-ModuleMember -Function Get-SteamGameInfo,Get-SteamGamesByName,Get-SteamSDRConfigForApp,Get-SteamNewsForApp,Get-SteamGlobalAchievementPercentagesForApp,Get-SteamNumberOfCurrentPlayersForApp
 #  -Alias ggi,ggbn
 
