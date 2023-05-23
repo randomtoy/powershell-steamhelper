@@ -73,8 +73,19 @@ Function Get-GamesByName {
 
 }
 
+Function Get-GlobalAchievementForApp {
+    Param(
+        # Application ID
+        [Parameter(Mandatory=$true)]
+        [string]
+        $AppId
+    )
+    $appInfo = Invoke-WebRequest -Uri "https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?appid=1245620&key=172A0F85C7E41F0535949A92798BD399" -UseBasicParsing
+    return ($appInfo.Content | ConvertFrom-Json).game.availableGameStats.achievements
+}
+
 New-Alias -Name ggi -Value Get-GameInfo
 New-Alias -Name ggbn -Value Get-GamesByName
 
-Export-ModuleMember -Function Get-GameInfo,Get-GamesByName -Alias ggi,ggbn
+Export-ModuleMember -Function Get-GameInfo,Get-GamesByName,Get-GlobalAchievementForApp -Alias ggi,ggbn
 
